@@ -2,18 +2,16 @@ import streamlit as st
 import requests
 from bs4 import BeautifulSoup
 import urllib.parse
+from email.utils import parsedate_to_datetime # 💡 新增：用來解析 Google RSS 時間的套件
 
-# 設定網頁標題與圖示（這會顯示在瀏覽器的分頁標籤上）
 st.set_page_config(page_title="台積電新聞看板", page_icon="📈", layout="centered")
 
 st.title("📈 TSMC 台積電最新焦點新聞")
-st.caption("本網站由 Python 爬蟲即時驅動 • 點擊標題即可閱讀原文")
+st.caption("本網站由 Python 爬蟲即時驅動 • 依最新發布時間排序")
 
-# 加一個「重新整理」的按鈕
 if st.button("🔄 重新整理新聞"):
     st.rerun()
 
-# 爬蟲核心邏輯
 query = "台積電"
 encoded_query = urllib.parse.quote(query)
 url = f"https://news.google.com/rss/search?q={encoded_query}&hl=zh-TW&gl=TW&ceid=TW:zh-Hant"
@@ -25,22 +23,45 @@ try:
         soup = BeautifulSoup(response.content, "xml")
         news_items = soup.find_all("item")
 
-    # 顯示新聞卡片
-    for index, item in enumerate(news_items[:15], 1):
+    # 💡 核心修改：先把所有新聞抓下來，並轉成電腦懂的時間物件
+    parsed_news = []
+    for item in news_items:
         title = item.title.text
-        pub_date = item.pubDate.text
+        raw_date = item.pubDate.text
         link = item.link.text
+        
+        # 將 "Sat, 30 May 2026..." 轉換成 Python 懂的時間（並轉換為台灣在地時區）
+        try:
+            dt_object = parsedate_to_datetime(raw_date).astimezone()
+            formatted_date = dt_object.strftime("%Y-%m-%d %H:%M") # 轉成漂亮的 2026-05-30 12:34 格式
+        except Exception:
+            dt_object = None
+            formatted_date = raw_date
+
+        parsed_news.append({
+            "title": title,
+            "link": link,
+            "date_obj": dt_object,
+            "date_str": formatted_date
+        })
+
+    # 💡 核心修改：根據時間物件進行「由新到舊」排序（reverse=True）
+    # 如果有些新聞沒有時間，就把它們放到最後面
+    parsed_news.sort(key=lambda x: x["date_obj"] if x["date_obj"] else datetime.min, reverse=True)
+
+    # 顯示排序後的前 15 則新聞卡片
+    for index, item in enumerate(parsed_news[:15], 1):
+        title = item["title"]
+        link = item["link"]
+        pub_date = item["date_str"]
         
         source_name = "新聞焦點"
         if " - " in title:
             title, source_name = title.rsplit(" - ", 1)
 
-        # 使用 Streamlit 內建的 container 做出卡片效果
         with st.container(border=True):
-            # 用 markdown 語法做出超連結標題
             st.markdown(f"### [{index}] [{title}]({link})")
             
-            # 做出兩欄排版放時間與來源
             col1, col2 = st.columns([2, 1])
             with col1:
                 st.caption(f"📅 發布時間: {pub_date}")
