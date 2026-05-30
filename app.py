@@ -6,22 +6,38 @@ import urllib.parse
 from email.utils import parsedate_to_datetime
 from datetime import datetime
 
-# 設定網頁標籤頁標題與圖標（改用旗艦版配置）
-st.set_page_config(page_title="Luciffar Think Tank: Eye of Decision", page_icon="👁️", layout="centered")
+# 💡 關鍵更新：將 page_icon 從原本的 "👁️" 修改為 "logo.png"
+# 這樣瀏覽器分頁標籤上的小圖示也會變成你專屬的「量化數據之眼」！
+st.set_page_config(
+    page_title="Luciffar Think Tank: Eye of Decision", 
+    page_icon="logo.png" if os.path.exists("logo.png") else "👁️", 
+    layout="centered"
+)
 
-# 核心優化：將「決定版.jpg」與智庫標題完美融合成高級網頁 Banner 結構
-# 檢查目錄下是否有 logo 圖片，有的話就渲染，沒有則用原標題備用
+# 🎨 終極強迫症防護：直接用 CSS 從網頁底層拔除所有錨點連結（保持網址乾淨）
+st.markdown("""
+    <style>
+    .element-container a.element-anchor {
+        display: none !important;
+    }
+    th a, td a, h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+        pointer-events: none !important;
+        cursor: default !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# 核心優化：渲染 Banner
 if os.path.exists("logo.png"):
-    col1, col2 = st.columns([1, 4]) # 1:4 的精美黃金比例分欄
+    col1, col2 = st.columns([1, 4]) 
     with col1:
-        st.write("") # 稍微向下推一點點，達到完美的視覺垂直居中
-        st.image("logo.png", use_container_width=True) # 渲染你的專屬量化之眼 Logo
+        st.write("") 
+        st.image("logo.png", use_container_width=True) 
     with col2:
-        st.title("路西法智庫決策之眼 `v3.1` 🚀")
+        st.title("路西法智庫決策之眼 `v3.3` 🚀")
         st.subheader("Luciffar Think Tank: Eye of Decision")
 else:
-    # 備用方案（防呆）
-    st.title("👁️ 路西法智庫決策之眼 `v3.1` 🚀")
+    st.title("👁️ 路西法智庫決策之眼 `v3.3` 🚀")
     st.subheader("Luciffar Think Tank: Eye of Decision")
 
 st.caption("由 AI 時代技術驅動的即時財經聚合看板 • 獨立決策層核心工具")
@@ -90,8 +106,8 @@ if search_target:
                     title, source_name = title.rsplit(" - ", 1)
 
                 with st.container(border=True):
-                    # 💡 修正行：改用 st.subheader 搭配 with_anchor=False，合法且完美防護錨點漏洞！
-                    st.subheader(f"[{index}] [{title}]({link})", with_anchor=False)
+                    # 使用標準 markdown 避免版本報錯
+                    st.markdown(f"### [{index}] [{title}]({link})")
                     
                     col1_news, col2_news = st.columns([2, 1])
                     with col1_news:
