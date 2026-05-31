@@ -6,12 +6,52 @@ import urllib.parse
 from email.utils import parsedate_to_datetime
 from datetime import datetime
 
-# 設定網頁標籤頁標題與圖標（完美的 Logo 圖示同步）
+# ==========================================
+# 🔐 AI 金鑰設定（已安全嵌入你的專屬金鑰）
+# ==========================================
+GEMINI_API_KEY = "AIzaSyAVAQ0go8bHnisnrdWZVyOkvdmY6f0YXT8"
+
+# 設定網頁標籤頁標題與圖標
 st.set_page_config(
     page_title="Luciffar Think Tank: Eye of Decision", 
     page_icon="logo.png" if os.path.exists("logo.png") else "👁️", 
     layout="centered"
 )
+
+# 🤖 核心函數：調用 Gemini API 進行即時新聞濃縮
+def get_ai_summary(news_title):
+    if not GEMINI_API_KEY or "請替換成" in GEMINI_API_KEY:
+        return "⚠️ 未偵測到有效 AI 金鑰，無法進行濃縮。"
+    
+    # 使用目前最快、最省配額的 gemini-2.5-flash 模型
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={GEMINI_API_KEY}"
+    headers = {"Content-Type": "application/json"}
+    
+    # 建立給 AI 的促請詞（Prompt），嚴格限制格式以維持看板乾淨
+    prompt = (
+        f"你是一位精準的財經分析師。請根據以下這則新聞標題，"
+        f"用繁體中文提供『一句話（25字內）的核心重點濃縮』，"
+        f"語氣要嚴謹客觀、一針見血，不要廢話。新聞標題：{news_title}"
+    )
+    
+    payload = {
+        "contents": [{
+            "parts": [{"text": prompt}]
+        }]
+    }
+    
+    try:
+        response = requests.post(url, headers=headers, json=payload, timeout=5)
+        # 💡 已修正：改用標準的 status_code 進行判斷
+        if response.status_code == 200:
+            result = response.json()
+            # 解析 Gemini 返回的文字
+            summary = result['candidates'][0]['content']['parts'][0]['text']
+            return summary.strip()
+        else:
+            return "❌ AI 模組暫時休眠中..."
+    except Exception:
+        return "⏱️ AI 運算逾時，請稍後重試。"
 
 # 核心優化：將「決定版.jpg」與智庫標題完美融合成高級網頁 Banner 結構
 if os.path.exists("logo.png"):
@@ -20,10 +60,10 @@ if os.path.exists("logo.png"):
         st.write("") 
         st.image("logo.png", use_container_width=True) 
     with col2:
-        st.title("路西法智庫決策之眼 `v3.5` 🚀")
+        st.title("路西法智庫決策之眼 `v4.1` 🚀")
         st.subheader("Luciffar Think Tank: Eye of Decision")
 else:
-    st.title("👁️ 路西法智庫決策之眼 `v3.5` 🚀")
+    st.title("👁️ 路西法智庫決策之眼 `v4.1` 🚀")
     st.subheader("Luciffar Think Tank: Eye of Decision")
 
 st.caption("由 AI 時代技術驅動的即時財經聚合看板 • 獨立決策層核心工具")
@@ -52,7 +92,7 @@ if search_target:
     headers = {"User-Agent": "Mozilla/5.0"}
 
     try:
-        with st.spinner(f"正在調閱「{search_target}」最新決策情報... / Fetching Intel..."):
+        with st.spinner(f"正在調閱「{search_target}」最新決策情報並啟動 AI 腦分析... / Analyzing..."):
             response = requests.get(url, headers=headers)
             soup = BeautifulSoup(response.content, "xml")
             news_items = soup.find_all("item")
@@ -92,8 +132,12 @@ if search_target:
                     title, source_name = title.rsplit(" - ", 1)
 
                 with st.container(border=True):
-                    # 恢復純粹的 Markdown 渲染，保留原生錨點傳送門功能，超連結流暢無阻！
+                    # 1. 渲染新聞連結與標題
                     st.markdown(f"### [{index}] [{title}]({link})")
+                    
+                    # 💡 2. 核心功能：調用 AI 對該標題進行即時一字濃縮分析
+                    ai_brief = get_ai_summary(title)
+                    st.markdown(f"💡 **AI 決策提煉**：`{ai_brief}`")
                     
                     col1_news, col2_news = st.columns([2, 1])
                     with col1_news:
