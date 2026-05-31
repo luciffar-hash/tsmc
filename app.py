@@ -13,10 +13,9 @@ st.set_page_config(
     layout="centered"
 )
 
-# 🛠️ 強化版 AI 金鑰讀取機制
-# 優先嘗試從 Streamlit Cloud Secrets 讀取，若無則使用寫死的 Key 作為備援
-try:
-    GEMINI_API_KEY = st.secrets["GEMINI_API_KEY"]
+# 刪除原本的 try-except 區塊，直接強制指定變數
+# 這一步是為了測試：如果這樣做 AI 就醒了，代表原本的 secrets 讀取路徑在你的環境有問題
+GEMINI_API_KEY = "AIzaSyAVAQ0go8bHnisnrdWZVyOkvdmY6f0YXT8"
 except:
     GEMINI_API_KEY = "AIzaSyAVAQ0go8bHnisnrdWZVyOkvdmY6f0YXT8"
 
